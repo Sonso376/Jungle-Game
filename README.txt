@@ -1,6 +1,8 @@
 Não implementei o loading screen ou o screen inicial
 
 Esqueci-me de implementar o sistema de pontos
+    -> Ver possibilidade de colocarmos negamax, numa sentido em que podem começar todos com 36 pontos. Há medidade que vao perdendo peças, um lado diminui, enquanto o outro aumenta.
+    -> Supondo que a nossa peça fica underattack, podemos colocar que o adversario ganha pontos com isso e nos perdemos!
 
 Já tem o jogo, com possivelmente todas as regras, pfv verifiquem! link para verificar ->
 (https://www.ymimports.com/pages/how-to-play-jungle?srsltid=AfmBOorSocHdPQB5nCIHHi1vHE3hzO0u7GbzqFv83jI46SHxSAi1-UeG)

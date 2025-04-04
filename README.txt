@@ -8,5 +8,4 @@ Já tem o jogo, com possivelmente todas as regras, pfv verifiquem! link para ver
 As peças tem states, por exemplo, se eu me mover neste turno para perto de uma peça inimiga de rank maior, a nossa peça vai ficar com o state under_attack
     -> pfv verifiquem se essa lógica está correta!
 
-
-
+se o AI estiver muito lento, ou estiver muito dificil ele ver uma jogada etc, etc tentei utilizar o modulo Threading()

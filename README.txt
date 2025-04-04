@@ -1,5 +1,6 @@
 Não implementei o loading screen ou o screen inicial
 
+Esqueci-me de implementar o sistema de pontos
 
 Já tem o jogo, com possivelmente todas as regras, pfv verifiquem! link para verificar ->
 (https://www.ymimports.com/pages/how-to-play-jungle?srsltid=AfmBOorSocHdPQB5nCIHHi1vHE3hzO0u7GbzqFv83jI46SHxSAi1-UeG)

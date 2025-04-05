@@ -1,4 +1,5 @@
 from piece import get_pieces
+import copy
 
 class Board:
     def __init__(self):
@@ -55,6 +56,23 @@ class Board:
     def display(self):
         for row in self.board:
             print(' '.join(row))
+
+    def clone(self):
+        return copy.deepcopy(self)
+
+    def make_move(self, piece, new_position):      # ?????
+        # Cria uma cópia do tabuleiro
+        new_board = self.clone()
+        # Atualiza a posição da peça correspondente no novo tabuleiro.
+        # Aqui, assumimos que cada peça tem um atributo 'color' para identificar a qual jogador pertence.
+        for p in new_board.pieces[piece.color]:
+            # Podemos identificar a peça por nome e posição atual
+            if p.name == piece.name and p.position == piece.position:
+                p.position = new_position
+                break
+        # Reposiciona as peças no tabuleiro (reconstrói o estado visual)
+        new_board._place_pieces()
+        return new_board
 
 board = Board()
 board.display()

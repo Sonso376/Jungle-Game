@@ -11,6 +11,7 @@ class Piece:
         self.side = side
         self.hp = rank
         self.state = "Alive" #alive, under attack, can attack, dead
+        self.color = "YELLOW" if self.side == "Player1" else "MAGENTA"
 
     def get_colored_model(self):
                     if not self.state: 

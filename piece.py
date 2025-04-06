@@ -37,12 +37,12 @@ def get_pieces():
         ],
         "MAGENTA": [
             Piece("Elephant", "🐘", (7, 1), 8, 1,"Player2"),
-            Piece("Lion", "🦁", (9, 7), 7, 2,"Player2"), #7,9
+            Piece("Lion", "🦁", (6, 7), 7, 2,"Player2"), #7,9
             Piece("Tiger", "🐯", (9, 1), 6, 2,"Player2"),
             Piece("Leopard", "🐆", (7, 5), 5, 1,"Player2"),
             Piece("Wolf", "🐺", (7, 3), 4, 1,"Player2"),
             Piece("Dog", "🐶", (8, 6), 3, 1,"Player2"),
             Piece("Cat", "🐱", (8, 2), 2, 1,"Player2"),
-            Piece("Rat", "🐭", (7, 7), 1, 3,"Player2"),#7, 7
+            Piece("Rat", "🐭", (6, 6), 1, 3,"Player2"),#7, 7
         ]
     }

@@ -100,7 +100,8 @@ class Rules:
 
         if defender.name == "Rat" and terrain_defender == "~":
             return False
-
+        if attacker.name == "Elephant" and defender.name == "Rat":
+            return False
         return attacker.hp >= defender.hp
 
     def check_victory(self):
@@ -123,3 +124,13 @@ class Rules:
                     piece.hp = 1
                 else:
                     piece.hp = piece.rank
+
+    def try_jump(self, piece):
+        # Se a peça for Lion ou Tiger, tenta verificar se há um salto possível.
+        if piece.name in ["Lion", "Tiger"]:
+            possible_jumps = self.move(piece)  # Reusa a lógica de movimentos
+            if possible_jumps:
+                return "jump available"
+            else:
+                return "jump blocked"
+        return "no jump"

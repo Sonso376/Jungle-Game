@@ -17,8 +17,8 @@ class Rules:
             if 1 <= new_r < self.board.rows and 1 <= new_c < self.board.cols:
                 target_cell = self.board.board[new_r][new_c]
 
-                if (piece.side == "Player1" and (new_r, new_c) == (9, 4)) or \
-                   (piece.side == "Player2" and (new_r, new_c) == (1, 4)):
+                if (piece.side == "Player1" and (new_r, new_c) == (1, 4)) or \
+                   (piece.side == "Player2" and (new_r, new_c) == (9, 4)):
                     continue
 
                 # Attempt jump for Lion/Tiger
@@ -40,7 +40,7 @@ class Rules:
                         occupied = False
                         for player_pieces in self.board.pieces.values():
                             for p in player_pieces:
-                                if p.position == (jump_r, jump_c):
+                                if p.position == (jump_r, jump_c) and p.state!="Dead":
                                     occupied = True
                                     if self.can_captures(piece, p):
                                         possible_moves.append((jump_r, jump_c))
@@ -55,7 +55,7 @@ class Rules:
                     occupied = False
                     for player_pieces in self.board.pieces.values():
                         for p in player_pieces:
-                            if p.position == (new_r, new_c):
+                            if p.position == (new_r, new_c) and p.state!="Dead":
                                 occupied = True
                                 if self.can_captures(piece, p):
                                     possible_moves.append((new_r, new_c))
@@ -100,7 +100,8 @@ class Rules:
 
         if defender.name == "Rat" and terrain_defender == "~":
             return False
-
+        if attacker.name=="Elephant" and defender.name=="Rat":
+            return False
         return attacker.hp >= defender.hp
 
     def check_victory(self):

@@ -1,8 +1,18 @@
+import random
+import numpy
 class AI:
     def __init__(self):
         pass
 
     def get_move_easy(self, board, rules, color):
+        moves=[]
+        for piece in board.pieces[color]:
+            moves+=[(piece, rules.move(piece))]
+        m=moves[random.randint(0,len(moves)-1)]
+        p=m[0]
+        move=m[1][random.randint(0,len(m[1])-1)]
+        return (p,move)
+    def get_move_medium(self, board, rules, color):
         best_move = None
         best_score = float('-inf')
         # Seleciona o melhor movimento utilizando minimax com depth 4.

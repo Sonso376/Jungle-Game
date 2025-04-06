@@ -1,19 +1,18 @@
 import random
-import numpy
-
+from rules import Rules
+import numpy as np
 class AI:
     def __init__(self):
         pass
 
     def get_move_easy(self, board, rules, color):
-        moves = []
+        moves=[]
         for piece in board.pieces[color]:
-            moves += [(piece, rules.move(piece))]
-        m = moves[random.randint(0, len(moves) - 1)]
-        p = m[0]
-        move = m[1][random.randint(0, len(m[1]) - 1)]
-        return (p, move)
-
+            moves+=[(piece, rules.move(piece))]
+        m=moves[random.randint(0,len(moves)-1)]
+        p=m[0]
+        move=m[1][random.randint(0,len(m[1])-1)]
+        return (p,move)
     def get_move_medium(self, board, rules, color):
         best_move = None
         best_score = float('-inf')
@@ -24,28 +23,14 @@ class AI:
                 for move in moves:
                     # Simula o movimento num novo estado do tabuleiro
                     new_board = board.make_move(piece, move)
-                    # Avalia o estado usando minimax (aqui, depth=2 e turno do adversário)
-                    score = self.minimax(new_board, rules, depth=2, maximizingPlayer=False, color=color)
+                    # Avalia o estado usando minimax (aqui, depth=4 e turno do adversário)
+                    score = self.minimax(new_board, rules, depth=4, maximizingPlayer=False, color=color)
                     if score > best_score:
                         best_score = score
                         best_move = (piece, move)
         return best_move
-
     def get_move_hard(self, board, rules, color):
-        best_move = None
-        best_score = float('-inf')
-
-        for piece in board.pieces[color]:
-            if piece.state != "Dead":
-                moves = rules.move(piece)
-                for move in moves:
-                    new_board = board.make_move(piece, move)
-                    score = self.minimax_ab(new_board, rules, depth=2, maximizingPlayer=False, alpha=float('-inf'), beta=float('inf'), color=color)
-                    if score > best_score:
-                        best_score = score
-                        best_move = (piece, move)
-        return best_move
-
+        return self.alpha_beta_cutoff_search(board,rules,0,color)
     def minimax(self, board, rules, depth, maximizingPlayer, color=None):
         if color is None:
             color = "MAGENTA" # default
@@ -75,79 +60,21 @@ class AI:
                         min_eval = min(min_eval, eval)
             return min_eval
 
-    def minimax_ab(self, board, rules, depth, maximizingPlayer, alpha, beta, color=None):
-        if color is None:
-            color = "MAGENTA"
-        victory = rules.check_victory()
-        if depth == 0 or victory:
-            return self.evaluate_position(board, rules, 1)
-        if maximizingPlayer:
-            max_eval = float('-inf')
-            for piece in board.pieces[board.ai_color]:
-                if piece.state != "Dead":
-                    moves = self.get_ordered_moves(board, rules, piece, color, maximizingPlayer=True)
-                    for move in moves:
-                        new_board = board.make_move(piece, move)
-                        eval_value = self.minimax_ab(new_board, rules, depth - 1, False, alpha, beta, color)
-                        max_eval = max(max_eval, eval_value)
-                        alpha = max(alpha, eval_value)
-                        if beta <= alpha:
-                            break  # poda beta
-            return max_eval
-        else:
-            min_eval = float('inf')
-            for piece in board.pieces[board.opponent_color]:
-                if piece.state != "Dead":
-                    moves = self.get_ordered_moves(board, rules, piece, color, maximizingPlayer=False)
-                    for move in moves:
-                        new_board = board.make_move(piece, move)
-                        eval_value = self.minimax_ab(new_board, rules, depth - 1, True, alpha, beta, color)
-                        min_eval = min(min_eval, eval_value)
-                        beta = min(beta, eval_value)
-                        if beta <= alpha:
-                            break  # poda alfa
-            return min_eval
-
-    def get_ordered_moves(self, board, rules, piece, color, maximizingPlayer):
-        # Obtém os movimentos legais para a peça
-        moves = rules.move(piece)
-        move_evaluations = []
-        for move in moves:
-            # Simula o movimento
-            new_board = board.make_move(piece, move)
-            # Usa uma avaliação rápida (simple_evaluate_side)
-            eval_value = self.simple_evaluate_side(new_board, rules, color)
-            move_evaluations.append((move, eval_value))
-        # Se for maximizador, queremos os maiores valores primeiro; se for minimizador, os menores
-        if maximizingPlayer:
-            move_evaluations.sort(key=lambda x: x[1], reverse=True)
-        else:
-            move_evaluations.sort(key=lambda x: x[1])
-        # Retorna apenas a lista ordenada de movimentos
-        return [move for move, score in move_evaluations]
-
-
     def evaluate_position(self, board, rules, difficulty):
         """
         Avalia a posição geral subtraindo a pontuação do adversário
         da pontuação da IA.
         """
-        if difficulty == 0:
+        if difficulty==0:
             ai_score = self.simple_evaluate_side(board, rules, board.ai_color)
             opponent_score = self.simple_evaluate_side(board, rules, board.opponent_color)
         else:
             ai_score = self.complex_evaluate_side(board, rules, board.ai_color)
             opponent_score = self.complex_evaluate_side(board, rules, board.opponent_color)
         return ai_score - opponent_score
-
+    
+    
     def simple_evaluate_side(self, board, rules, side):
-        """
-        Percorre todas as peças de um lado (por exemplo, "MAGENTA" ou "YELLOW")
-        e soma os seus valores (baseados no rank).
-
-        Se a peça for um Elephant, verifica se algum Rat adversário pode capturá-lo.
-        Se estiver ameaçado, reduz o valor efetivo do Elephant (por exemplo, 50% do seu rank).
-        """
         score = 0
         # Determina a cor do adversário
         opponent_side = "MAGENTA" if side == "YELLOW" else "YELLOW"
@@ -177,66 +104,110 @@ class AI:
         Se a peça for um Elephant, verifica se algum Rat adversário pode capturá-lo.
         Se estiver ameaçado, reduz o valor efetivo do Elephant (por exemplo, 50% do seu rank).
         """
-        bonus_L_T = 5
-        bonus_R = 6
+        bonus_L_T=5
+        bonus_R=6
         score = 0
-        possible_moves = set()
-        traps = {(1, 3), (2, 4), (1, 5)} if side == "YELLOW" else {(9, 3), (8, 4), (9, 5)}
+        possible_moves=set()
+        traps={(1,3), (2,4), (1,5)} if side=="YELLOW" else {(9,3), (8,4), (9,5)}
         # Determina a cor do adversário
         opponent_side = "MAGENTA" if side == "YELLOW" else "YELLOW"
-
-        corr = False
-
-        if self.corrida(board, side)[0]:  # verifica se é possivel correr para o den adversário antes do adversário
+        corr=False
+        if self.corrida(board, side)[0]: # verifica se é possivel correr para o den adversário antes do adversário
             if self.corrida(board, opponent_side)[0]:
-                if self.corrida(board, side) <= self.corrida(board, opponent_side):
-                    corr = True
+                if self.corrida(board, side)<=self.corrida(board, opponent_side):
+                    corr=True
             else:
-                corr = True
+                corr=True            
         for piece in board.pieces[side]:
             if piece.state == "Dead":
                 continue
             value = piece.rank  # valor base é o rank da peça
-            if piece.name in ["Lion", "Tiger"]:  # bonus para peças especiais
-                value += bonus_L_T
-            elif piece.name == "Rat":
-                if board.pieces[opponent_side][
-                    0].state == "Dead":  # diminui bonus do rato se elefante adeversário estiver morto
-                    bonus_R /= 2
-                value += bonus_R
-            if piece.state == "under_attack":  # diminui vaor da peça caso ela esteja em perigo
-                value /= 2
+            if piece.name in ["Lion", "Tiger"]: # bonus para peças especiais
+                value+=bonus_L_T
+            elif piece.name=="Rat":
+                if board.pieces[opponent_side][0].state=="Dead": # diminui bonus do rato se elefante adeversário estiver morto
+                    bonus_R/=2
+                value+=bonus_R
+            if piece.state=="under_attack": # diminui valor da peça caso ela esteja em perigo
+                value/=2
             score += value
-            possible_moves = possible_moves | set(rules.move(piece))
+            possible_moves=possible_moves | set(rules.move(piece))
 
-        for piece in [board.pieces[opponent_side][1],
-                      board.pieces[opponent_side][2]]:  # verifica se peças estão a bloquear saltos adversários
-            if rules.try_jump(piece) == "jump blocked":
-                score += 4
+        for piece in [board.pieces[opponent_side][1],board.pieces[opponent_side][2]]: # verifica se peças estão a bloquear saltos adversários
+            if rules.try_jump(piece)=="jump blocked":
+                score+=4
         if traps in possible_moves:
-            score += 5
+            score+=5
         if corr:
-            score = 10000
+            score=10000
         return score
-
     def corrida(self, board, side):
-        livre = False
-        min_dis = 100
-        opponent_side = "MAGENTA" if side == "YELLOW" else "YELLOW"
-        for p in board.pieces[side] + board.pieces[opponent_side]:
-            if self.man_dis(p, side) < min_dis:
-                if p.side == side:
-                    livre = True
+        livre=False
+        min_dis=100
+        opponent_side="MAGENTA" if side=="YELLOW" else "YELLOW"
+        for p in board.pieces[side]+board.pieces[opponent_side]:
+            if self.man_dis(p, side)<min_dis:
+                if p.side==side:
+                    livre=True
                 else:
-                    livre = False
-            elif self.man_dis(p, side) == min_dis:
-                if p.side == opponent_side:
-                    livre = False
-        return (livre, min_dis)
-
+                    livre=False
+            elif self.man_dis(p, side)==min_dis:
+                if p.side==opponent_side:
+                    livre=False
+        return (livre, min_dis)    
     def man_dis(self, piece, side):
-        den = (9, 4) if side == "YELLOW" else (1, 4)
-        xd, yd = den
-        x, y = piece.position
-        return abs(xd - x) + abs(yd - y)
+        den=(9,4) if side=="YELLOW" else (1,4)
+        xd, yd=den
+        x, y=piece.position
+        return abs(xd-x)+abs(yd-y)
+    def alpha_beta_cutoff_search(self, board, rules, difficulty, side, d=4):
+        """Search game to determine best action; use alpha-beta pruning.
+        This version cuts off search and uses an evaluation function."""
+        player = side
+        opponent_side="MAGENTA" if side=="YELLOW" else "YELLOW"
+        # Functions used by alpha_beta
+        def max_value(board, rules, difficulty, alpha, beta, depth, verified_boards):
+            if cutoff_test(rules, depth):
+                return self.evaluate_position(board, rules, difficulty)
+            v = -np.inf
+            for p in board.pieces[player]:
+                for a in rules.move(p):
+                    if board.make_move(p,a) not in verified_boards:
+                        verified_boards+=[board.make_move(p,a)]
+                        v = max(v, min_value(board.make_move(p, a), Rules(board.make_move(p, a)), difficulty, alpha, beta, depth + 1, verified_boards))
+                        if v >= beta:
+                            return v
+                        alpha = max(alpha, v)
+            return v
 
+        def min_value (board, rules, difficulty, alpha, beta, depth, verified_boards):
+            if cutoff_test(rules, depth):
+                return self.evaluate_position(board, rules, difficulty)
+            v = np.inf
+            for p in board.pieces[opponent_side]:
+                for a in rules.move(p):
+                    if board.make_move(p,a) not in verified_boards:
+                        verified_boards+=[board.make_move(p,a)]
+                        v = min(v, max_value(board.make_move(p, a), Rules(board.make_move(p, a)), difficulty, alpha, beta, depth + 1,verified_boards))
+                        if v <= alpha:
+                            return v
+                        beta = min(beta, v)
+            return v
+
+        # Body of alpha_beta_cutoff_search starts here:
+        # The default test cuts off at depth d or at a terminal state
+        cutoff_test =lambda rules, depth: depth > d or rules.check_victory()
+        best_score = -np.inf
+        beta = np.inf
+        best_action = None
+        moves=[]
+        verified_boards=[]
+        for p in board.pieces[side]:
+            moves=rules.move(p)
+            for a in moves:
+                v = min_value(board.make_move(p,a), Rules(board.make_move(p, a)), difficulty, best_score, beta, 1, verified_boards)
+                if v > best_score:
+                    best_score = v
+                    best_action = a
+                    best_piece=p
+        return (best_piece, best_action)

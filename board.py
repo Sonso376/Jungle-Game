@@ -73,6 +73,3 @@ class Board:
         # Reposiciona as peças no tabuleiro (reconstrói o estado visual)
         new_board._place_pieces()
         return new_board
-
-board = Board()
-board.display()

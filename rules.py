@@ -9,7 +9,7 @@ class Rules:
         possible_moves = []
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         r, c = piece.position
-        piece.state = True
+        piece.state = "Alive"
 
         for dr, dc in directions:
             new_r, new_c = r + dr, c + dc
@@ -17,8 +17,8 @@ class Rules:
             if 1 <= new_r < self.board.rows and 1 <= new_c < self.board.cols:
                 target_cell = self.board.board[new_r][new_c]
 
-                if (piece.side == "Player1" and (new_r, new_c) == (9, 4)) or \
-                   (piece.side == "Player2" and (new_r, new_c) == (1, 4)):
+                if (piece.side == "Player1" and (new_r, new_c) == (1, 4)) or \
+                   (piece.side == "Player2" and (new_r, new_c) == (9, 4)):
                     continue
 
                 # Attempt jump for Lion/Tiger
@@ -40,7 +40,7 @@ class Rules:
                         occupied = False
                         for player_pieces in self.board.pieces.values():
                             for p in player_pieces:
-                                if p.position == (jump_r, jump_c):
+                                if p.position == (jump_r, jump_c) and p.state!="Dead":
                                     occupied = True
                                     if self.can_captures(piece, p):
                                         possible_moves.append((jump_r, jump_c))
@@ -55,7 +55,7 @@ class Rules:
                     occupied = False
                     for player_pieces in self.board.pieces.values():
                         for p in player_pieces:
-                            if p.position == (new_r, new_c):
+                            if p.position == (new_r, new_c) and p.state!="Dead":
                                 occupied = True
                                 if self.can_captures(piece, p):
                                     possible_moves.append((new_r, new_c))
@@ -78,7 +78,35 @@ class Rules:
                                     p.state = "can_attack"
 
         return possible_moves
+    def try_jump(self,piece: Piece):
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        r, c = piece.position
+        piece.state = "Alive"
 
+        for dr, dc in directions:
+            if piece.name in ["Lion", "Tiger"]:
+                    jump_r, jump_c = r + dr, c + dc
+                    rat_in_the_way = False
+                    while (1 <= jump_r < self.board.rows and 1 <= jump_c < self.board.cols and
+                           self.board.board[jump_r][jump_c] == "~"):
+                        for player_pieces in self.board.pieces.values():
+                            for p in player_pieces:
+                                if p.position == (jump_r, jump_c) and p.name == "Rat":
+                                    rat_in_the_way = True
+                                    return "jump blocked"
+                        jump_r += dr
+                        jump_c += dc
+
+                    if (1 <= jump_r < self.board.rows and 1 <= jump_c < self.board.cols and
+                        self.board.board[jump_r][jump_c] != "~" and not rat_in_the_way):
+                        for player_pieces in self.board.pieces.values():
+                            for p in player_pieces:
+                                if p.position == (jump_r, jump_c) and p.state!="Dead":
+                                    if not self.can_captures(piece, p):
+                                        return "jump blocked"
+                                    break
+                        continue  # Skip normal move if jump was tried
+        return None
     def can_captures(self, attacker: Piece, defender: Piece):
         if attacker.side == defender.side:
             return False
@@ -100,7 +128,7 @@ class Rules:
 
         if defender.name == "Rat" and terrain_defender == "~":
             return False
-        if attacker.name == "Elephant" and defender.name == "Rat":
+        if attacker.name=="Elephant" and defender.name=="Rat":
             return False
         return attacker.hp >= defender.hp
 
@@ -124,13 +152,3 @@ class Rules:
                     piece.hp = 1
                 else:
                     piece.hp = piece.rank
-
-    def try_jump(self, piece):
-        # Se a peça for Lion ou Tiger, tenta verificar se há um salto possível.
-        if piece.name in ["Lion", "Tiger"]:
-            possible_jumps = self.move(piece)  # Reusa a lógica de movimentos
-            if possible_jumps:
-                return "jump available"
-            else:
-                return "jump blocked"
-        return "no jump"

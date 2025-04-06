@@ -9,7 +9,7 @@ class Rules:
         possible_moves = []
         directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         r, c = piece.position
-        piece.state = True
+        piece.state = "Alive"
 
         for dr, dc in directions:
             new_r, new_c = r + dr, c + dc
@@ -78,7 +78,35 @@ class Rules:
                                     p.state = "can_attack"
 
         return possible_moves
+    def try_jump(self,piece: Piece):
+        directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        r, c = piece.position
+        piece.state = "Alive"
 
+        for dr, dc in directions:
+            if piece.name in ["Lion", "Tiger"]:
+                    jump_r, jump_c = r + dr, c + dc
+                    rat_in_the_way = False
+                    while (1 <= jump_r < self.board.rows and 1 <= jump_c < self.board.cols and
+                           self.board.board[jump_r][jump_c] == "~"):
+                        for player_pieces in self.board.pieces.values():
+                            for p in player_pieces:
+                                if p.position == (jump_r, jump_c) and p.name == "Rat":
+                                    rat_in_the_way = True
+                                    return "jump blocked"
+                        jump_r += dr
+                        jump_c += dc
+
+                    if (1 <= jump_r < self.board.rows and 1 <= jump_c < self.board.cols and
+                        self.board.board[jump_r][jump_c] != "~" and not rat_in_the_way):
+                        for player_pieces in self.board.pieces.values():
+                            for p in player_pieces:
+                                if p.position == (jump_r, jump_c) and p.state!="Dead":
+                                    if not self.can_captures(piece, p):
+                                        return "jump blocked"
+                                    break
+                        continue  # Skip normal move if jump was tried
+        return None
     def can_captures(self, attacker: Piece, defender: Piece):
         if attacker.side == defender.side:
             return False

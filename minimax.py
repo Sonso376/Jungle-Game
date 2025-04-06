@@ -35,7 +35,7 @@ class AI:
         # Se o depth for 0 ou se o jogo tiver terminado, avalia a posição.
         victory = rules.check_victory()
         if depth == 0 or victory:
-            return self.evaluate_position(board, rules)
+            return self.evaluate_position(board, rules, 0)
 
         if maximizingPlayer:
             max_eval = float('-inf')
@@ -58,23 +58,20 @@ class AI:
                         min_eval = min(min_eval, eval)
             return min_eval
 
-    def evaluate_position(self, board, rules):
+    def evaluate_position(self, board, rules, difficulty):
         """
         Avalia a posição geral subtraindo a pontuação do adversário
         da pontuação da IA.
         """
-        ai_score = self.evaluate_side(board, rules, board.ai_color)
-        opponent_score = self.evaluate_side(board, rules, board.opponent_color)
+        if difficulty==0:
+            ai_score = self.simple_evaluate_side(board, rules, board.ai_color)
+            opponent_score = self.simple_evaluate_side(board, rules, board.opponent_color)
+        else:
+            ai_score = self.complex_evaluate_side(board, rules, board.ai_color)
+            opponent_score = self.complex_evaluate_side(board, rules, board.opponent_color)
         return ai_score - opponent_score
 
-    def evaluate_side(self, board, rules, side):
-        """
-        Percorre todas as peças de um lado (por exemplo, "MAGENTA" ou "YELLOW")
-        e soma os seus valores (baseados no rank).
-
-        Se a peça for um Elephant, verifica se algum Rat adversário pode capturá-lo.
-        Se estiver ameaçado, reduz o valor efetivo do Elephant (por exemplo, 50% do seu rank).
-        """
+    def simple_evaluate_side(self, board, rules, side):
         score = 0
         # Determina a cor do adversário
         opponent_side = "MAGENTA" if side == "YELLOW" else "YELLOW"
@@ -95,4 +92,68 @@ class AI:
                     value *= 0.5  # reduz o valor efetivo do Elephant
             score += value
         return score
+
+    def complex_evaluate_side(self, board, rules, side):
+        """
+        Percorre todas as peças de um lado (por exemplo, "MAGENTA" ou "YELLOW")
+        e soma os seus valores (baseados no rank).
+
+        Se a peça for um Elephant, verifica se algum Rat adversário pode capturá-lo.
+        Se estiver ameaçado, reduz o valor efetivo do Elephant (por exemplo, 50% do seu rank).
+        """
+        bonus_L_T=5
+        bonus_R=6
+        score = 0
+        possible_moves=set()
+        traps={(1,3), (2,4), (1,5)} if side=="YELLOW" else {(9,3), (8,4), (9,5)}
+        # Determina a cor do adversário
+        opponent_side = "MAGENTA" if side == "YELLOW" else "YELLOW"
+        if self.corrida(board, side)[0]: # verifica se é possivel correr para o den adversário antes do adversário
+            if self.corrida(board, opponent_side)[0]:
+                if self.corrida(board, side)<=self.corrida(board, opponent_side):
+                    corr=True
+            else:
+                corr=True            
+        for piece in board.pieces[side]:
+            if piece.state == "Dead":
+                continue
+            value = piece.rank  # valor base é o rank da peça
+            if piece.name in ["Lion", "Tiger"]: # bonus para peças especiais
+                value+=bonus_L_T
+            elif piece.name=="Rat":
+                if board.pieces[opponent_side][0].state=="Dead": # diminui bonus do rato se elefante adeversário estiver morto
+                    bonus_R/=2
+                value+=bonus_R
+            if piece.state=="under_attack": # diminui vaor da peça caso ela esteja em perigo
+                vaule/=2
+            score += value
+            possible_moves=possible_moves | set(rules.move(piece))
+
+        for piece in [board.pieces[opponent_side][1],board.pieces[opponent_side][2]]: # verifica se peças estão a bloquear saltos adversários
+            if rules.try_jump(piece)=="jump blocked":
+                score+=4
+        if traps in possible_moves:
+            score+=5
+        if corr:
+            score=10000
+        return score
+    def corrida(self, board, side):
+        livre=False
+        min_dis=100
+        opponent_side="MAGENTA" if side=="YELLOW" else "YELLOW"
+        for p in board.pieces[side]+board.pieces[opponent_side]:
+            if self.man_dis(p, side)<min_dis:
+                if p.side==side:
+                    livre=True
+                else:
+                    livre=False
+            elif self.man_dis(p, side)==min_dis:
+                if p.side==opponent_side:
+                    livre=False
+        return (livre, min_dis)    
+    def man_dis(self, piece, side):
+        den=(9,4) if side=="YELLOW" else (1,4)
+        xd, yd=den
+        x, y=piece.position
+        return abs(xd-x)+abs(yd-y)
 
